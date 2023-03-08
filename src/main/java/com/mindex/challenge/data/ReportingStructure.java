@@ -12,10 +12,13 @@ public class ReportingStructure {
 	private Employee employee;
 	private int numberOfReports;
 	
+	public ReportingStructure() {
+	}
+	
 	public ReportingStructure(Employee employee, int numberOfReports) {
 		super();
 		
-		LOG.debug("Creating ReportingStructure with employee [{} {}]", employee.getFirstName(), employee.getLastName());
+		LOG.debug("Creating ReportingStructure with employee [{} {}] and numberOfReports [{}]", employee.getFirstName(), employee.getLastName(), numberOfReports);
 		
 		this.employee = employee;
 		this.numberOfReports = numberOfReports;
