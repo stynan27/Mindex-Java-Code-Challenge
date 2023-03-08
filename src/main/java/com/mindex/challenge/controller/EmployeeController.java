@@ -30,8 +30,7 @@ public class EmployeeController {
         return employeeService.read(id);
     }
     
-    // TODO: Create REST endpoint for GETing a dynamically created ReportStructure
-    // Extends Employee endpoint
+    // REST endpoint for GETing a dynamically created ReportStructure - Extends Employee endpoint
     @GetMapping("/employee/{id}/reporting-structure")
     public ReportingStructure readReportStructure(@PathVariable String id) {
         LOG.debug("Received report-structure get request for id [{}]", id);
