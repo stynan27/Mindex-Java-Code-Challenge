@@ -1,7 +1,12 @@
 package com.mindex.challenge.service.impl;
 
-import com.mindex.challenge.data.Employee;
-import com.mindex.challenge.service.EmployeeService;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.intThat;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,11 +17,13 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import com.mindex.challenge.data.Employee;
+import com.mindex.challenge.data.ReportingStructure;
+import com.mindex.challenge.service.EmployeeService;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -24,6 +31,7 @@ public class EmployeeServiceImplTest {
 
     private String employeeUrl;
     private String employeeIdUrl;
+    private String reportingStructureUrl;
 
     @Autowired
     private EmployeeService employeeService;
@@ -38,6 +46,7 @@ public class EmployeeServiceImplTest {
     public void setup() {
         employeeUrl = "http://localhost:" + port + "/employee";
         employeeIdUrl = "http://localhost:" + port + "/employee/{id}";
+        reportingStructureUrl = employeeIdUrl + "/reporting-structure";
     }
 
     @Test
@@ -82,5 +91,40 @@ public class EmployeeServiceImplTest {
         assertEquals(expected.getLastName(), actual.getLastName());
         assertEquals(expected.getDepartment(), actual.getDepartment());
         assertEquals(expected.getPosition(), actual.getPosition());
+    }
+    
+    @Test
+    public void testReadReportingStructureNotFound() { 
+        // Arrange
+    	String testEmployeeId = "Bad id";
+
+        // Execute
+        HttpStatus readStatus = restTemplate.getForEntity(reportingStructureUrl, ReportingStructure.class,testEmployeeId).getStatusCode();
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, readStatus);
+    }
+    
+    @Test
+    public void testReadReportingStructureAllReports() { 
+    	String testEmployeeId = "16a596ae-edd3-4847-99fe-c4518e82c86f";
+    	
+    	Employee testEmployee = new Employee();
+    	testEmployee.setEmployeeId(testEmployeeId);
+    	testEmployee.setFirstName("John");
+    			
+    	ReportingStructure testReportingStructure = new ReportingStructure();
+    	testReportingStructure.setEmployee(testEmployee);
+    	testReportingStructure.setNumberOfReports(4);
+        
+        // Read ReportingStructure for given employee
+        ReportingStructure readReportingStructure = restTemplate.getForEntity(reportingStructureUrl, ReportingStructure.class,testEmployeeId).getBody();
+
+        // Assert
+        assertEquals(testReportingStructure.getEmployee().getFirstName(), readReportingStructure.getEmployee().getFirstName());
+        assertEquals(testReportingStructure.getNumberOfReports(), readReportingStructure.getNumberOfReports());
+        assertEquals("Ringo", readReportingStructure.getEmployee().getDirectReports().get(1).getFirstName());
+        assertEquals("Pete", readReportingStructure.getEmployee().getDirectReports().get(1).getDirectReports().get(0).getFirstName());
+        assertEquals("George", readReportingStructure.getEmployee().getDirectReports().get(1).getDirectReports().get(1).getFirstName());
     }
 }
