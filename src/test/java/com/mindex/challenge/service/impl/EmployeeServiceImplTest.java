@@ -4,9 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.intThat;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,6 +38,8 @@ public class EmployeeServiceImplTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+    
+
 
     @Before
     public void setup() {
@@ -94,19 +93,53 @@ public class EmployeeServiceImplTest {
     }
     
     @Test
-    public void testReadReportingStructureNotFound() { 
+    public void testReadEmployeeNotFound() { 
         // Arrange
     	String testEmployeeId = "Bad id";
 
         // Execute
-        HttpStatus readStatus = restTemplate.getForEntity(reportingStructureUrl, ReportingStructure.class,testEmployeeId).getStatusCode();
+        HttpStatus readStatus = restTemplate.getForEntity(employeeIdUrl, Employee.class, testEmployeeId).getStatusCode();
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, readStatus);
     }
     
     @Test
-    public void testReadReportingStructureAllReports() { 
+    public void testUpdateEmployeeNotFound()
+    {
+        // Arrange
+    	String testEmployeeId = "Bad id";
+    	Employee testEmployee = new Employee();
+    	
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Execute
+        HttpStatus readStatus = restTemplate.exchange(employeeIdUrl, 
+        		HttpMethod.PUT,
+        		new HttpEntity<Employee>(testEmployee, headers),
+        		Employee.class, 
+        		testEmployeeId).getStatusCode();
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, readStatus);
+    }
+    
+    @Test
+    public void testReadReportingStructureNotFound() { 
+        // Arrange
+    	String testEmployeeId = "Bad id";
+
+        // Execute
+        HttpStatus readStatus = restTemplate.getForEntity(reportingStructureUrl, ReportingStructure.class, testEmployeeId).getStatusCode();
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, readStatus);
+    }
+    
+    @Test
+    public void testReadReportingStructureReturnsAllReports() { 
+    	// Arrange
     	String testEmployeeId = "16a596ae-edd3-4847-99fe-c4518e82c86f";
     	
     	Employee testEmployee = new Employee();
@@ -117,8 +150,8 @@ public class EmployeeServiceImplTest {
     	testReportingStructure.setEmployee(testEmployee);
     	testReportingStructure.setNumberOfReports(4);
         
-        // Read ReportingStructure for given employee
-        ReportingStructure readReportingStructure = restTemplate.getForEntity(reportingStructureUrl, ReportingStructure.class,testEmployeeId).getBody();
+        // Execute - Read ReportingStructure for given employee
+        ReportingStructure readReportingStructure = restTemplate.getForEntity(reportingStructureUrl, ReportingStructure.class, testEmployeeId).getBody();
 
         // Assert
         assertEquals(testReportingStructure.getEmployee().getFirstName(), readReportingStructure.getEmployee().getFirstName());
@@ -127,4 +160,19 @@ public class EmployeeServiceImplTest {
         assertEquals("Pete", readReportingStructure.getEmployee().getDirectReports().get(1).getDirectReports().get(0).getFirstName());
         assertEquals("George", readReportingStructure.getEmployee().getDirectReports().get(1).getDirectReports().get(1).getFirstName());
     }
+    
+    @Test
+    public void testReadReportingStructureReturnsNoReports() { 
+        // Arrange
+    	String testEmployeeId = "b7839309-3348-463b-a7e3-5de1c168beb3";
+        int expectedReports = 0;
+
+        // Execute
+        ReportingStructure readReportingStructure = restTemplate.getForEntity(reportingStructureUrl, ReportingStructure.class, testEmployeeId).getBody();
+
+        // Assert
+        assertEquals(expectedReports, readReportingStructure.getNumberOfReports());
+    }
+
+    // TODO: Compensation Tests
 }
