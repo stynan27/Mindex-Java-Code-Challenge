@@ -63,6 +63,16 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Employee update(Employee employee) {
         LOG.debug("Updating employee [{}]", employee);
+        
+        Employee foundEmployee = employeeRepository.findByEmployeeId(employee.getEmployeeId());
+        
+        if (foundEmployee == null) {
+        	// Respond with proper entity Not Found 404
+            //throw new RuntimeException("Invalid employeeId: " + id);
+            throw new ResponseStatusException(
+            	HttpStatus.NOT_FOUND, "Invalid employeeId: " + employee.getEmployeeId()
+            );
+        }
 
         return employeeRepository.save(employee);
     }
