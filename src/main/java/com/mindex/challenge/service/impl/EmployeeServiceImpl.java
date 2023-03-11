@@ -1,6 +1,8 @@
 package com.mindex.challenge.service.impl;
 
+import com.mindex.challenge.dao.CompensationRepository;
 import com.mindex.challenge.dao.EmployeeRepository;
+import com.mindex.challenge.data.Compensation;
 import com.mindex.challenge.data.Employee;
 import com.mindex.challenge.data.ReportingStructure;
 import com.mindex.challenge.service.EmployeeService;
@@ -23,6 +25,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Autowired
     private EmployeeRepository employeeRepository;
+    
+    @Autowired
+    private CompensationRepository compensationRepository;
 
     @Override
     public Employee create(Employee employee) {
@@ -32,6 +37,16 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository.insert(employee);
 
         return employee;
+    }
+    
+    @Override
+    public Compensation createCompensation(Compensation compensation) {
+        LOG.debug("Creating compensation [{}]", compensation);
+
+        compensation.setCompensationId(UUID.randomUUID().toString());
+        compensationRepository.insert(compensation);
+
+        return compensation;
     }
 
     @Override
@@ -63,16 +78,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Employee update(Employee employee) {
         LOG.debug("Updating employee [{}]", employee);
-        
-        Employee foundEmployee = employeeRepository.findByEmployeeId(employee.getEmployeeId());
-        
-        if (foundEmployee == null) {
-        	// Respond with proper entity Not Found 404
-            //throw new RuntimeException("Invalid employeeId: " + id);
-            throw new ResponseStatusException(
-            	HttpStatus.NOT_FOUND, "Invalid employeeId: " + employee.getEmployeeId()
-            );
-        }
 
         return employeeRepository.save(employee);
     }

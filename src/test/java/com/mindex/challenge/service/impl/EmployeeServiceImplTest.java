@@ -4,6 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.intThat;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.mindex.challenge.data.Compensation;
 import com.mindex.challenge.data.Employee;
 import com.mindex.challenge.data.ReportingStructure;
 import com.mindex.challenge.service.EmployeeService;
@@ -29,6 +33,7 @@ public class EmployeeServiceImplTest {
     private String employeeUrl;
     private String employeeIdUrl;
     private String reportingStructureUrl;
+    private String compensationUrl;
 
     @Autowired
     private EmployeeService employeeService;
@@ -46,6 +51,7 @@ public class EmployeeServiceImplTest {
         employeeUrl = "http://localhost:" + port + "/employee";
         employeeIdUrl = "http://localhost:" + port + "/employee/{id}";
         reportingStructureUrl = employeeIdUrl + "/reporting-structure";
+        compensationUrl = employeeIdUrl + "/compensation";
     }
 
     @Test
@@ -90,6 +96,64 @@ public class EmployeeServiceImplTest {
         assertEquals(expected.getLastName(), actual.getLastName());
         assertEquals(expected.getDepartment(), actual.getDepartment());
         assertEquals(expected.getPosition(), actual.getPosition());
+    }
+    
+    @Test
+    public void testCreateEmployeeReturnsCreated() {
+    	// Arrange
+        Employee testEmployee = new Employee();
+        testEmployee.setFirstName("Doe");
+        testEmployee.setLastName("John");
+        testEmployee.setDepartment("Engineering");
+        testEmployee.setPosition("Developer");
+        
+        // Execute
+        HttpStatus readStatus = restTemplate.postForEntity(employeeUrl, testEmployee, Employee.class).getStatusCode();
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, readStatus);
+    }
+    
+    @Test
+    public void testCreateCompensationReturnsCreated() {
+    	// Arrange
+        Employee testEmployee = new Employee();
+        testEmployee.setEmployeeId("62c1084e-6e34-4630-93fd-9153afb65309");
+        testEmployee.setFirstName("Pete");
+        testEmployee.setLastName("Best");
+        testEmployee.setDepartment("Engineering");
+        testEmployee.setPosition("Developer II");
+        
+        Compensation testCompensation = new Compensation();
+        BigDecimal testSalary = new BigDecimal("200000.00");
+        testCompensation.setSalary(testSalary);
+        testCompensation.setEffectiveDate(LocalDate.now());
+        testCompensation.setEmployee(testEmployee);
+        
+        // Execute
+        HttpStatus readStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, readStatus);
+    }
+    
+    @Test
+    public void testCreateCompensationReturnsNotFound() {
+    	// Arrange
+        Employee testEmployee = new Employee();
+        testEmployee.setEmployeeId("Bad_Id");
+        
+        Compensation testCompensation = new Compensation();
+        BigDecimal testSalary = new BigDecimal("200000.00");
+        testCompensation.setSalary(testSalary);
+        testCompensation.setEffectiveDate(LocalDate.now());
+        testCompensation.setEmployee(testEmployee);
+        
+        // Execute
+        HttpStatus readStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, readStatus);
     }
     
     @Test
@@ -175,4 +239,5 @@ public class EmployeeServiceImplTest {
     }
 
     // TODO: Compensation Tests
+    
 }
