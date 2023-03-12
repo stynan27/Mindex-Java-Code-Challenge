@@ -28,14 +28,18 @@ public class EmployeeController {
                 .body(createdEmployee);
     }
     
+    // Rest endpoint to create compensation by existing employeeId
     @PostMapping("/employee/{id}/compensation")
-    public ResponseEntity<Compensation> create(@RequestBody Compensation compensation) {
-        LOG.debug("Received compensation create request for employee [{} {}]", 
-        		compensation.getEmployee().getFirstName(),
-        		compensation.getEmployee().getLastName());
+    public ResponseEntity<Compensation> create(@PathVariable String id, @RequestBody Compensation compensation) {
+        LOG.debug("Received compensation create request for employeeId [{}] with salary [{}] and effective date [{}]", 
+        		id,
+        		compensation.getSalary(),
+        		compensation.getEffectiveDate());
         
-        // Catch/throw invalid employee handled here.
-        employeeService.read(compensation.getEmployee().getEmployeeId());
+        // Prevent data corruption by retrieving/setting employee by id
+        // Also, catch/throw invalid employee handled here.
+        Employee employee = employeeService.read(id);
+        compensation.setEmployee(employee);
 
         Compensation createdCompensation = employeeService.createCompensation(compensation);
         return ResponseEntity
@@ -60,6 +64,17 @@ public class EmployeeController {
         Employee employee = employeeService.read(id);
         
         return employeeService.readReports(employee);
+    }
+    
+    // Rest endpoint to retrieve compensation by employeeId
+    @GetMapping("/employee/{id}/compensation")
+    public Compensation create(@PathVariable String id) {
+        LOG.debug("Received GET compensation request for employeeId [{}]", id);
+        
+        // Catch/throw invalid employee handled here.
+        employeeService.read(id);
+
+        return employeeService.readCompensation(id);
     }
 
     @PutMapping("/employee/{id}")

@@ -9,5 +9,6 @@ public interface EmployeeService {
     Compensation createCompensation(Compensation compensation);
     Employee read(String id);
     ReportingStructure readReports(Employee employee);
+    Compensation readCompensation(String id);
     Employee update(Employee employee);
 }

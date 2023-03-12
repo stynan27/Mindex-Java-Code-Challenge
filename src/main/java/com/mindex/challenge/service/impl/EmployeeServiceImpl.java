@@ -41,9 +41,21 @@ public class EmployeeServiceImpl implements EmployeeService {
     
     @Override
     public Compensation createCompensation(Compensation compensation) {
-        LOG.debug("Creating compensation [{}]", compensation);
-
         compensation.setCompensationId(UUID.randomUUID().toString());
+        
+        // Check if Compensation already exists by employeeID
+        // Prevents multiple Compensation entities per employee
+        String employeeId = compensation.getEmployee().getEmployeeId();
+        Compensation existingCompensation = compensationRepository.findByEmployee_EmployeeId(employeeId);
+        
+        if (existingCompensation != null) {
+        	// Respond with proper entity Conflict 409
+            throw new ResponseStatusException(
+            	HttpStatus.CONFLICT, "Compensation already exists for employeeId: " + employeeId
+            );
+        }
+     
+        LOG.debug("Creating compensation [{}] with employeeId [{}]", compensation, compensation.getEmployee().getEmployeeId());
         compensationRepository.insert(compensation);
 
         return compensation;
@@ -73,6 +85,22 @@ public class EmployeeServiceImpl implements EmployeeService {
         ReportingStructure reportingStructure = new ReportingStructure(employee, computeTotalReports(employee));
 
         return reportingStructure;
+    }
+    
+    @Override
+    public Compensation readCompensation(String id) {
+        LOG.debug("Get compensation with id [{}]", id);
+
+        Compensation compensation = compensationRepository.findByEmployee_EmployeeId(id);
+
+        if (compensation == null) {
+        	// Respond with proper entity Not Found 404
+            throw new ResponseStatusException(
+            	HttpStatus.NOT_FOUND, "No compensation found for employeeId: " + id
+            );
+        }
+
+        return compensation;
     }
 
     @Override
