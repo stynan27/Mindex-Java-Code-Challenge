@@ -108,10 +108,10 @@ public class EmployeeServiceImplTest {
         testEmployee.setPosition("Developer");
         
         // Execute
-        HttpStatus readStatus = restTemplate.postForEntity(employeeUrl, testEmployee, Employee.class).getStatusCode();
+        HttpStatus createStatus = restTemplate.postForEntity(employeeUrl, testEmployee, Employee.class).getStatusCode();
 
         // Assert
-        assertEquals(HttpStatus.CREATED, readStatus);
+        assertEquals(HttpStatus.CREATED, createStatus);
     }
     
     @Test
@@ -131,10 +131,10 @@ public class EmployeeServiceImplTest {
         testCompensation.setEmployee(testEmployee);
         
         // Execute
-        HttpStatus readStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
+        HttpStatus createStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
 
         // Assert
-        assertEquals(HttpStatus.CREATED, readStatus);
+        assertEquals(HttpStatus.CREATED, createStatus);
     }
     
     @Test
@@ -150,14 +150,60 @@ public class EmployeeServiceImplTest {
         testCompensation.setEmployee(testEmployee);
         
         // Execute
-        HttpStatus readStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
+        HttpStatus createStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, readStatus);
+        assertEquals(HttpStatus.NOT_FOUND, createStatus);
     }
     
     @Test
-    public void testReadEmployeeNotFound() { 
+    public void testCreateCompensationReturnsConflict() {
+    	// Arrange
+        Employee testEmployee = new Employee();
+        testEmployee.setEmployeeId("b7839309-3348-463b-a7e3-5de1c168beb3");
+        
+        Compensation testCompensation = new Compensation();
+        BigDecimal testSalary = new BigDecimal("200000.00");
+        testCompensation.setSalary(testSalary);
+        testCompensation.setEffectiveDate(LocalDate.now());
+        testCompensation.setEmployee(testEmployee);
+        
+        // Execute
+        HttpStatus createStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
+        HttpStatus createStatus2 = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
+        
+        // Assert
+        assertEquals(HttpStatus.CREATED, createStatus);
+        assertEquals(HttpStatus.CONFLICT, createStatus2);
+    }
+    
+    @Test
+    public void testCreateAndReadCompensation() { 
+    	// Arrange
+        Employee testEmployee = new Employee();
+        testEmployee.setEmployeeId("c0c2293d-16bd-4603-8e08-638a9d18b22c");
+        testEmployee.setFirstName("George");
+        
+        Compensation testCompensation = new Compensation();
+        BigDecimal testSalary = new BigDecimal("500000.00");
+        testCompensation.setSalary(testSalary);
+        testCompensation.setEffectiveDate(LocalDate.now());
+        testCompensation.setEmployee(testEmployee);
+        
+        // Execute
+        HttpStatus createStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
+        Compensation compensationResult = restTemplate.getForEntity(compensationUrl, Compensation.class, testEmployee.getEmployeeId()).getBody();
+        
+        // Assert
+        assertEquals(HttpStatus.CREATED, createStatus);
+        assertEquals(testCompensation.getSalary(), compensationResult.getSalary());
+        assertEquals(testCompensation.getEffectiveDate(), compensationResult.getEffectiveDate());
+        assertEquals(testCompensation.getEmployee().getEmployeeId(), compensationResult.getEmployee().getEmployeeId());
+        assertEquals(testCompensation.getEmployee().getFirstName(), compensationResult.getEmployee().getFirstName());
+    }
+    
+    @Test
+    public void testReadEmployeeReturnsNotFound() { 
         // Arrange
     	String testEmployeeId = "Bad id";
 
@@ -169,7 +215,7 @@ public class EmployeeServiceImplTest {
     }
     
     @Test
-    public void testUpdateEmployeeNotFound()
+    public void testUpdateEmployeeReturnsNotFound()
     {
         // Arrange
     	String testEmployeeId = "Bad id";
@@ -190,7 +236,7 @@ public class EmployeeServiceImplTest {
     }
     
     @Test
-    public void testReadReportingStructureNotFound() { 
+    public void testReadReportingStructureReturnsNotFound() { 
         // Arrange
     	String testEmployeeId = "Bad id";
 
@@ -238,6 +284,28 @@ public class EmployeeServiceImplTest {
         assertEquals(expectedReports, readReportingStructure.getNumberOfReports());
     }
 
-    // TODO: Compensation Tests
+    @Test
+    public void testReadCompensationReturnsNotFoundOnBadEmployeeId() { 
+        // Arrange
+    	String testEmployeeId = "Bad id";
+
+        // Execute
+        HttpStatus readStatus = restTemplate.getForEntity(compensationUrl, Compensation.class, testEmployeeId).getStatusCode();
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, readStatus);
+    }
+    
+    @Test
+    public void testReadCompensationReturnsNotFoundOnNoCompensation() { 
+        // Arrange
+    	String testEmployeeId = "03aa1462-ffa9-4978-901b-7c001562cf6f";
+
+        // Execute
+        HttpStatus readStatus = restTemplate.getForEntity(compensationUrl, Compensation.class, testEmployeeId).getStatusCode();
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, readStatus);
+    }
     
 }
