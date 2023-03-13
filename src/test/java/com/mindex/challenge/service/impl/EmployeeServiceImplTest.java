@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.intThat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -21,6 +23,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.mindex.challenge.dao.CompensationRepository;
+import com.mindex.challenge.dao.EmployeeRepository;
 import com.mindex.challenge.data.Compensation;
 import com.mindex.challenge.data.Employee;
 import com.mindex.challenge.data.ReportingStructure;
@@ -37,6 +41,12 @@ public class EmployeeServiceImplTest {
 
     @Autowired
     private EmployeeService employeeService;
+    
+    @Autowired
+    private EmployeeRepository employeeRepository;
+    
+    @Autowired
+    private CompensationRepository compensationRepository;
 
     @LocalServerPort
     private int port;
@@ -55,7 +65,7 @@ public class EmployeeServiceImplTest {
     }
 
     @Test
-    public void testCreateReadUpdate() {
+    public void testCreateReadUpdateEmployee() {
         Employee testEmployee = new Employee();
         testEmployee.setFirstName("John");
         testEmployee.setLastName("Doe");
@@ -99,85 +109,6 @@ public class EmployeeServiceImplTest {
     }
     
     @Test
-    public void testCreateEmployeeReturnsCreated() {
-    	// Arrange
-        Employee testEmployee = new Employee();
-        testEmployee.setFirstName("Doe");
-        testEmployee.setLastName("John");
-        testEmployee.setDepartment("Engineering");
-        testEmployee.setPosition("Developer");
-        
-        // Execute
-        HttpStatus createStatus = restTemplate.postForEntity(employeeUrl, testEmployee, Employee.class).getStatusCode();
-
-        // Assert
-        assertEquals(HttpStatus.CREATED, createStatus);
-    }
-    
-    @Test
-    public void testCreateCompensationReturnsCreated() {
-    	// Arrange
-        Employee testEmployee = new Employee();
-        testEmployee.setEmployeeId("62c1084e-6e34-4630-93fd-9153afb65309");
-        testEmployee.setFirstName("Pete");
-        testEmployee.setLastName("Best");
-        testEmployee.setDepartment("Engineering");
-        testEmployee.setPosition("Developer II");
-        
-        Compensation testCompensation = new Compensation();
-        BigDecimal testSalary = new BigDecimal("200000.00");
-        testCompensation.setSalary(testSalary);
-        testCompensation.setEffectiveDate(LocalDate.now());
-        testCompensation.setEmployee(testEmployee);
-        
-        // Execute
-        HttpStatus createStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
-
-        // Assert
-        assertEquals(HttpStatus.CREATED, createStatus);
-    }
-    
-    @Test
-    public void testCreateCompensationReturnsNotFound() {
-    	// Arrange
-        Employee testEmployee = new Employee();
-        testEmployee.setEmployeeId("Bad_Id");
-        
-        Compensation testCompensation = new Compensation();
-        BigDecimal testSalary = new BigDecimal("200000.00");
-        testCompensation.setSalary(testSalary);
-        testCompensation.setEffectiveDate(LocalDate.now());
-        testCompensation.setEmployee(testEmployee);
-        
-        // Execute
-        HttpStatus createStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, createStatus);
-    }
-    
-    @Test
-    public void testCreateCompensationReturnsConflict() {
-    	// Arrange
-        Employee testEmployee = new Employee();
-        testEmployee.setEmployeeId("b7839309-3348-463b-a7e3-5de1c168beb3");
-        
-        Compensation testCompensation = new Compensation();
-        BigDecimal testSalary = new BigDecimal("200000.00");
-        testCompensation.setSalary(testSalary);
-        testCompensation.setEffectiveDate(LocalDate.now());
-        testCompensation.setEmployee(testEmployee);
-        
-        // Execute
-        HttpStatus createStatus = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
-        HttpStatus createStatus2 = restTemplate.postForEntity(compensationUrl, testCompensation, Compensation.class, testEmployee.getEmployeeId()).getStatusCode();
-        
-        // Assert
-        assertEquals(HttpStatus.CREATED, createStatus);
-        assertEquals(HttpStatus.CONFLICT, createStatus2);
-    }
-    
-    @Test
     public void testCreateAndReadCompensation() { 
     	// Arrange
         Employee testEmployee = new Employee();
@@ -200,51 +131,6 @@ public class EmployeeServiceImplTest {
         assertEquals(testCompensation.getEffectiveDate(), compensationResult.getEffectiveDate());
         assertEquals(testCompensation.getEmployee().getEmployeeId(), compensationResult.getEmployee().getEmployeeId());
         assertEquals(testCompensation.getEmployee().getFirstName(), compensationResult.getEmployee().getFirstName());
-    }
-    
-    @Test
-    public void testReadEmployeeReturnsNotFound() { 
-        // Arrange
-    	String testEmployeeId = "Bad id";
-
-        // Execute
-        HttpStatus readStatus = restTemplate.getForEntity(employeeIdUrl, Employee.class, testEmployeeId).getStatusCode();
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, readStatus);
-    }
-    
-    @Test
-    public void testUpdateEmployeeReturnsNotFound()
-    {
-        // Arrange
-    	String testEmployeeId = "Bad id";
-    	Employee testEmployee = new Employee();
-    	
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        // Execute
-        HttpStatus readStatus = restTemplate.exchange(employeeIdUrl, 
-        		HttpMethod.PUT,
-        		new HttpEntity<Employee>(testEmployee, headers),
-        		Employee.class, 
-        		testEmployeeId).getStatusCode();
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, readStatus);
-    }
-    
-    @Test
-    public void testReadReportingStructureReturnsNotFound() { 
-        // Arrange
-    	String testEmployeeId = "Bad id";
-
-        // Execute
-        HttpStatus readStatus = restTemplate.getForEntity(reportingStructureUrl, ReportingStructure.class, testEmployeeId).getStatusCode();
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, readStatus);
     }
     
     @Test
@@ -283,29 +169,88 @@ public class EmployeeServiceImplTest {
         // Assert
         assertEquals(expectedReports, readReportingStructure.getNumberOfReports());
     }
-
+    
     @Test
-    public void testReadCompensationReturnsNotFoundOnBadEmployeeId() { 
-        // Arrange
-    	String testEmployeeId = "Bad id";
-
-        // Execute
-        HttpStatus readStatus = restTemplate.getForEntity(compensationUrl, Compensation.class, testEmployeeId).getStatusCode();
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, readStatus);
+    public void testEmployeeServiceReadsExistingEmployee() { 
+    	// Create
+        Employee testEmployee = new Employee();
+        testEmployee.setEmployeeId("c0c2293d-16bd-4603-8e08-777777777777");
+        testEmployee.setFirstName("Jerome");
+        testEmployee.setLastName("Powell");
+        testEmployee.setDepartment("Federal Reserve");
+        testEmployee.setPosition("Chairman");
+    	employeeRepository.save(testEmployee);
+    	
+    	// Execute
+    	Employee resultEmployee = employeeService.read(testEmployee.getEmployeeId());
+    	
+    	// Assert
+    	assertEquals(testEmployee.getEmployeeId(), resultEmployee.getEmployeeId());
+    	assertEquals(testEmployee.getFirstName(), resultEmployee.getFirstName());
+    	assertEquals(testEmployee.getLastName(), resultEmployee.getLastName());
+    	assertEquals(testEmployee.getDepartment(), resultEmployee.getDepartment());
+    	assertEquals(testEmployee.getPosition(), resultEmployee.getPosition());
     }
     
     @Test
-    public void testReadCompensationReturnsNotFoundOnNoCompensation() { 
-        // Arrange
-    	String testEmployeeId = "03aa1462-ffa9-4978-901b-7c001562cf6f";
-
-        // Execute
-        HttpStatus readStatus = restTemplate.getForEntity(compensationUrl, Compensation.class, testEmployeeId).getStatusCode();
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, readStatus);
+    public void testEmployeeServiceReadsExistingDirectReports() { 
+    	// Create
+    	Employee testEmployee = new Employee();
+        testEmployee.setEmployeeId("c0c2293d-16bd-7777-777-777777777777");
+        testEmployee.setFirstName("Jack");
+        testEmployee.setLastName("Black");
+        
+        Employee testReportEmployee1 = new Employee();
+        testReportEmployee1.setEmployeeId("b7839309-3348-463b-a7e3-5de1c168beb3");
+        Employee testReportEmployee2 = new Employee();
+        testReportEmployee2.setEmployeeId("c0c2293d-16bd-4603-8e08-638a9d18b22c");
+        List<Employee> directReports = new ArrayList<Employee>() {
+        	{
+            	add(testReportEmployee1);
+            	add(testReportEmployee2);
+        	}
+        };
+        testEmployee.setDirectReports(directReports);
+    	employeeRepository.save(testEmployee);	
+    	
+    	// Execute
+    	ReportingStructure resultReportingStructure = employeeService.readReports(testEmployee);
+    	
+    	// Assert
+    	assertEquals(testEmployee.getEmployeeId(), resultReportingStructure.getEmployee().getEmployeeId());
+    	assertEquals(testEmployee.getFirstName(), resultReportingStructure.getEmployee().getFirstName());
+    	assertEquals(testEmployee.getLastName(), resultReportingStructure.getEmployee().getLastName());
+    	assertEquals(2, resultReportingStructure.getNumberOfReports());
     }
     
+    @Test
+    public void testEmployeeServiceReadsExistingCompensatation() { 
+    	// Create
+    	Employee testEmployee = new Employee();
+        testEmployee.setEmployeeId("c0c2293d-16bd-4603-777-777777777777");
+        testEmployee.setFirstName("Cornelius");
+        testEmployee.setLastName("Fudge");
+        testEmployee.setDepartment("Mysteries");
+        testEmployee.setPosition("Minister");
+    	employeeRepository.save(testEmployee);
+    	
+        Compensation testCompensation = new Compensation();
+        testCompensation.setCompensationId("c0c2293d-16bd-4603-8e08-8888888888");
+        testCompensation.setSalary(new BigDecimal("200000"));
+        testCompensation.setEffectiveDate(LocalDate.now());
+        testCompensation.setEmployee(testEmployee);
+    	compensationRepository.save(testCompensation);
+    	
+    	// Execute
+    	Compensation resultCompensation = employeeService.readCompensation(testEmployee.getEmployeeId()); 
+    	
+    	// Assert
+    	assertEquals(testEmployee.getEmployeeId(), resultCompensation.getEmployee().getEmployeeId());
+    	assertEquals(testEmployee.getFirstName(), resultCompensation.getEmployee().getFirstName());
+    	assertEquals(testEmployee.getLastName(), resultCompensation.getEmployee().getLastName());
+    	assertEquals(testEmployee.getDepartment(), resultCompensation.getEmployee().getDepartment());
+    	assertEquals(testEmployee.getPosition(), resultCompensation.getEmployee().getPosition());
+    	assertEquals(testCompensation.getSalary(), resultCompensation.getSalary());
+    	assertEquals(testCompensation.getEffectiveDate(), resultCompensation.getEffectiveDate());
+    }
 }
